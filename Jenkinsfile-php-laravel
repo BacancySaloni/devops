@@ -1,0 +1,42 @@
+pipeline {
+ agent any
+ environment {
+        HOST     = credentials('staging-host')
+        APP_URL  = credentials('staging-working-directory')
+    }
+ stages {
+        stage("Build") {
+            steps {
+                sh 'php --version'
+                sh 'composer install'
+                sh 'composer --version'
+                sh 'php artisan key:generate'
+            }
+        }
+        stage("Unit test") {
+            steps {
+                sh 'php --version'
+                sh 'touch database/test.sqlite'
+                sh 'rm database/test.sqlite'
+                sh 'touch database/test.sqlite'
+                sh 'php artisan optimize:clear'
+                sh 'php artisan config:cache'
+                sh 'php artisan migrate'
+            }
+        }
+        stage('Deploy') { 
+            steps {
+
+                sh 'ssh -o StrictHostKeyChecking=no ${HOST} "cd ${APP_URL}; \
+                    git pull origin staging; \
+                    composer install --no-interaction; \
+                    php artisan migrate --force; \
+                    php artisan cache:clear; \
+                    npm install; \
+                    npm run dev; \
+                    php artisan config:cache "'
+                
+            }
+        }
+  }
+}
