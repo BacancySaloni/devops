@@ -1,8 +1,11 @@
 pipeline {
  agent any
  environment {
-        HOST     = credentials('staging-host')
-        APP_URL  = credentials('staging-working-directory')
+        HOST     = credentials('dev-host')
+        APP_URL  = credentials('dev-working-directory')
+    }
+    parameters {
+        booleanParam(name: 'DeployToDevelopment', defaultValue: false, description: 'deployment checks')
     }
  stages {
         stage("Build") {
@@ -22,13 +25,19 @@ pipeline {
                 sh 'php artisan optimize:clear'
                 sh 'php artisan config:cache'
                 sh 'php artisan migrate'
+                sh 'php artisan test'
             }
         }
-        stage('Deploy') { 
+        stage('Deployment') {
+            when {
+                expression {
+                    params.DeployToDevelopment
+                }
+            }
             steps {
 
                 sh 'ssh -o StrictHostKeyChecking=no ${HOST} "cd ${APP_URL}; \
-                    git pull origin staging; \
+                    git pull origin develop; \
                     composer install --no-interaction; \
                     php artisan migrate --force; \
                     php artisan cache:clear; \
