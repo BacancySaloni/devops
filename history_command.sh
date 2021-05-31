@@ -1,0 +1,2 @@
+sed -i 's/HISTSIZE=1000/HISTSIZE=3000/g' ~/.bashrc
+sed -i 's/HISTFILESIZE=2000/HISTFILESIZE=4000/g' ~/.bashrc
